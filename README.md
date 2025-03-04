@@ -41,7 +41,9 @@ You should see the MongoDB, Mongo Express, and Node.js app running.
 
 ### 4. Access the Services
 - **Node.js App:** http://localhost:3000 (Use this to add data to MongoDB and verify in Mongo Express)
+  ![WhatsApp Görsel 2025-03-04 saat 17 48 29_40c1263a](https://github.com/user-attachments/assets/5279216e-172d-4f96-be1b-e6dccb998788)
 -  **Mongo Express UI:** http://localhost:5000 (Check if the data is stored after adding it via the Node.js app)
+  ![WhatsApp Görsel 2025-03-04 saat 17 49 27_290f3752](https://github.com/user-attachments/assets/cfb53bdd-329c-4f75-9c3c-fad9b2c84db8)
 
 ## Additional Notes
 - Ensure firewall settings allow required ports (3000, 5000, 27017).
