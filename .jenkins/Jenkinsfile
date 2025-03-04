@@ -1,0 +1,95 @@
+pipeline {
+    agent any
+    environment {
+        MONGO_INITDB_ROOT_USERNAME = 'abmrv'
+        MONGO_INITDB_ROOT_PASSWORD = '123'
+        ME_CONFIG_MONGODB_ADMINUSERNAME = 'abmrv'
+        ME_CONFIG_MONGODB_ADMINPASSWORD = '123'
+        ME_CONFIG_MONGODB_SERVER = 'mydb'
+    }
+    stages {
+        stage('Clone Repository') {
+            steps {
+                sh '''
+                    rm -rf main  # Remove existing directory to avoid conflicts
+                    git clone https://github.com/Abo1406/Developing-with-Docker.git main
+                '''
+            }
+        }
+        stage('Check and Install Docker') {
+            steps {
+                script {
+                    def dockerInstalled = sh(script: 'command -v docker >/dev/null 2>&1', returnStatus: true)
+                    if (dockerInstalled != 0) {
+                        sh '''
+                            sudo dnf remove -y docker docker-client docker-client-latest docker-common \
+                                              docker-latest docker-latest-logrotate docker-logrotate docker-engine || true
+                            sudo dnf -y install dnf-plugins-core
+                            sudo dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+                            sudo dnf install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+                            sudo systemctl enable --now docker
+                        '''
+                    } else {
+                        echo 'Docker is already installed'
+                    }
+                }
+            }
+        }
+        stage('Create Docker Network') {
+            steps {
+                sh 'docker network create mongo-network || true'
+            }
+        }
+        stage('Start MongoDB Container') {
+            steps {
+                sh '''
+                    docker ps -a | grep mydb && docker stop mydb && docker rm mydb || true
+                    docker run -p 27017:27017 -d \
+                        -e MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME} \
+                        -e MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD} \
+                        --name mydb --net mongo-network mongo
+                '''
+            }
+        }
+        stage('Start Mongo Express') {
+            steps {
+                sh '''
+                    docker ps -a | grep myexp && docker stop myexp && docker rm myexp || true
+                    docker run -d -p 5000:8081 --name myexp \
+                        -e ME_CONFIG_MONGODB_ADMINUSERNAME=${ME_CONFIG_MONGODB_ADMINUSERNAME} \
+                        -e ME_CONFIG_MONGODB_ADMINPASSWORD=${ME_CONFIG_MONGODB_ADMINPASSWORD} \
+                        --net mongo-network -e ME_CONFIG_MONGODB_SERVER=${ME_CONFIG_MONGODB_SERVER} \
+                        mongo-express:latest
+                '''
+            }
+        }
+        stage('Install Node.js & Dependencies') {
+            steps {
+                sh '''
+                    cd main/app
+                    sudo dnf install -y npm
+                    npm install cross
+                    sudo firewall-cmd --add-port=3000/tcp --permanent || true
+                    sudo firewall-cmd --reload
+                    npm install --unsafe-perm=true --allow-root
+                '''
+            }
+        }
+        stage('Start Node.js App') {
+            steps {
+                script {
+                    def serverJsExists = sh(script: '[ -f main/app/server.js ] && echo "exists" || echo "missing"', returnStdout: true).trim()
+                    if (serverJsExists != 'exists') {
+                        error 'server.js not found! Check if the repository is properly cloned.'
+                    }
+                }
+                sh '''
+                    cd main/app
+                    nohup npm start &
+                    # Optional: Add a small delay to ensure the app starts
+                    sleep 2
+                '''
+            }
+        }
+    }
+}
