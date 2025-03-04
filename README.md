@@ -40,8 +40,8 @@ docker ps
 You should see the MongoDB, Mongo Express, and Node.js app running.
 
 ### 4. Access the Services
-- **Mongo Express UI:** [http://localhost:5000](http://localhost:5000)
-- **Node.js App:** [http://localhost:3000](http://localhost:3000)
+- **Node.js App:** http://localhost:3000 (Use this to add data to MongoDB and verify in Mongo Express)
+-  **Mongo Express UI:** http://localhost:5000 (Check if the data is stored after adding it via the Node.js app)
 
 ## Additional Notes
 - Ensure firewall settings allow required ports (3000, 5000, 27017).
