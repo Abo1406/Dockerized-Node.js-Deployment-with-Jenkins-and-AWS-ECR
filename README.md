@@ -1,61 +1,110 @@
-# Developing-with-Docker
+# **Developing with Docker and Deploying to Amazon ECR**
 
-## Project Overview
-This project sets up a Dockerized environment including MongoDB, Mongo Express, and a Node.js application. The setup is automated using a Jenkins pipeline to streamline the deployment process.
+## **Project Overview**
+This project demonstrates how to:
+- Set up a Dockerized environment including MongoDB, Mongo Express, and a Node.js application.  
+- Automate the deployment process using a **Jenkins pipeline**.  
+- Dockerize a Node.js application and deploy it to a private Docker registry using **Amazon Elastic Container Registry (ECR)**.
 
-## Features
-- Deploys MongoDB in a Docker container
-- Deploys Mongo Express for database management
-- Runs a Node.js application
-- Automated setup using Jenkins pipeline
+---
 
-## Prerequisites
-Ensure you have the following installed on your system:
-- **Jenkins** (with necessary permissions to run Docker commands)
-- **Docker & Docker Compose**
-- **Git**
+## **Features**
+- **MongoDB** and **Mongo Express** in Docker containers.  
+- A **Node.js** application running in a Docker container.  
+- Automated setup with **Jenkins pipeline**.  
+- **AWS ECR** integration for hosting Docker images.  
 
-## Setup and Installation
+---
 
-### 1. Clone the Repository
-```sh
-rm -rf app  # Ensure the directory is clean before cloning
+## **Prerequisites**
+Ensure you have the following installed and configured:
+- [Docker](https://docs.docker.com/get-docker/) & **Docker Compose**  
+- [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html)  
+- **AWS account** with necessary permissions to use ECR  
+- **Jenkins** (with permissions to run Docker commands)  
+- **Git**  
+
+---
+
+## **Setup and Installation**
+
+### **1. Clone the Repository**
+Ensure the directory is clean before cloning:
+```bash
+rm -rf app
 git clone https://github.com/Abo1406/Developing-with-Docker.git app
 ```
 
-### 2. Start the Jenkins Pipeline
-- Configure a Jenkins job to execute the provided `Jenkinsfile`.
-- This pipeline will:
-  - Install Docker (if not installed)
-  - Create a Docker network
-  - Start MongoDB and Mongo Express containers
-  - Install Node.js dependencies
-  - Start the Node.js application
+### **2. Start the Jenkins Pipeline**
+Configure a Jenkins job to execute the provided Jenkinsfile.  
 
-### 3. Verify Running Containers
-Run the following command to check running containers:
-```sh
-docker ps
+### **3. Prepare the Node.js Application**
+Ensure your application is ready and available in your local machine's project directory.
+
+### **4. Create a Dockerfile**
+```dockerfile
+FROM node:20-alpine
+ENV MONGO_DB_USERNAME=admin \
+    MONGO_DB_PWD=123
+WORKDIR /app
+COPY . .
+RUN npm install
+CMD ["node", "server.js"]
 ```
-You should see the MongoDB, Mongo Express, and Node.js app running.
 
-### 4. Access the Services
-- **Node.js App:** http://localhost:3000 (Use this to add data to MongoDB and verify in Mongo Express)
-  ![WhatsApp Görsel 2025-03-04 saat 17 48 29_40c1263a](https://github.com/user-attachments/assets/5279216e-172d-4f96-be1b-e6dccb998788)
--  **Mongo Express UI:** http://localhost:5000 (Check if the data is stored after adding it via the Node.js app)
-  ![WhatsApp Görsel 2025-03-04 saat 17 49 27_290f3752](https://github.com/user-attachments/assets/cfb53bdd-329c-4f75-9c3c-fad9b2c84db8)
+### **5. Create an AWS ECR Repository**
+```bash
+aws ecr create-repository --repository-name my-app --region eu-central-1
+```
 
-## Additional Notes
-- Ensure firewall settings allow required ports (3000, 5000, 27017).
-- Modify `server.js` to use the correct MongoDB credentials.
+### **6. Authenticate Docker to AWS ECR**
+```bash
+aws ecr get-login-password --region eu-central-1 | docker login --username AWS --password-stdin 423623856295.dkr.ecr.eu-central-1.amazonaws.com
+```
 
-## Troubleshooting
+### **7. Build and Push Docker Image to AWS ECR**
+```bash
+docker build -t my-app .
+docker tag my-app:latest 423623856295.dkr.ecr.eu-central-1.amazonaws.com/my-app:latest
+docker push 423623856295.dkr.ecr.eu-central-1.amazonaws.com/my-app:latest
+```
+
+---
+
+## **Deploying the Application with Docker Compose**
+Create a `mongo.yml` file:
+```yaml
+version: '3'
+services:
+  my-app:
+    image: 423623856295.dkr.ecr.eu-central-1.amazonaws.com/my-app:latest
+    ports:
+      - "3000:3000"
+  mongodb:
+    image: mongo
+    ports:
+      - "27017:27017"
+  mongo-express:
+    image: mongo-express
+    ports:
+      - "5000:8081"
+```
+
+---
+
+## **Access the Services**
+- **Node.js App:** [http://localhost:3000](http://localhost:3000)  
+- **Mongo Express UI:** [http://localhost:5000](http://localhost:5000)  
+
+---
+
+## **Troubleshooting**
 If the pipeline fails:
-- Check Jenkins logs for errors.
-- Verify that Docker is installed and running.
-- Ensure MongoDB credentials match those in `server.js`.
+- Check Jenkins logs for errors.  
+- Verify Docker installation.  
+- Ensure MongoDB credentials match those in `server.js`.  
 
-## License
-This project is open-source and available under the MIT License.
+---
 
-
+## **License**
+This project is open-source and available under the **MIT License**.
