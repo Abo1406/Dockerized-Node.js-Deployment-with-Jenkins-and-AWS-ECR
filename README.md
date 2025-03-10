@@ -76,20 +76,37 @@ Create a `mongo.yml` file:
 ```yaml
 version: '3'
 services:
-  my-app:
-    image: 423623856295.dkr.ecr.eu-central-1.amazonaws.com/my-app:latest
-    ports:
-      - "3000:3000"
+my-app:
+image: 423623856295.dkr.ecr.eu-central-1.amazonaws.com/my-app:latest
+ports: 
+- 3000:3000
   mongodb:
     image: mongo
     ports:
       - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=123
+    volumes:
+    - mongo-data:/data/db
   mongo-express:
     image: mongo-express
     ports:
       - "5000:8081"
+    restart: always
+    depends_on:
+      - mongodb
+    environment:
+      - ME_CONFIG_MONGODB_ADMINUSERNAME=admin
+      - ME_CONFIG_MONGODB_ADMINPASSWORD=password
+      - ME_CONFIG_MONGODB_SERVER=mongodb
+volumes:
+mongo-data:
+driver: local
 ```
+mongo-data volume:
 
+Using a named volume (mongo-data) for MongoDB data is a good practice as it allows data to persist even if the container is removed. However, consider specifying access modes or other volume options if needed.
 ---
 
 ## **Access the Services**
