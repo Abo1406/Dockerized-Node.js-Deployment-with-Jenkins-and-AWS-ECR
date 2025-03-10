@@ -104,9 +104,8 @@ volumes:
 mongo-data:
 driver: local
 ```
-mongo-data volume:
-
-Using a named volume (mongo-data) for MongoDB data is a good practice as it allows data to persist even if the container is removed. However, consider specifying access modes or other volume options if needed.
+### mongo-data volume:
+Using a named volume (mongo-data) allows data to persist even if the container is removed. However, consider specifying access modes or other volume options if needed.
 ---
 
 ## **Access the Services**
